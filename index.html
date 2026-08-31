@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scroll-Triggered Potion Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 400vh;
+        }
+
+        .stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #000000;
+            z-index: 10;
+        }
+
+        .sprite-container {
+            width: 250px;
+            height: 250px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 0 35px rgba(16, 185, 129, 0.25);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .sprite-sheet {
+            width: 1000px;
+            height: 1000px;
+            background-image: url('Gemini_Generated_Image_87lwg887lwg887lw.jpg');
+            background-repeat: no-repeat;
+            background-size: 1000px 1000px;
+            background-position: 0px 0px;
+        }
+
+        .error-msg {
+            position: absolute;
+            color: #f87171;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 10px;
+            display: none;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 40px;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #10b981;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stage">
+        <div class="sprite-container" id="container">
+            <div class="sprite-sheet" id="spriteSheet"></div>
+            <div class="error-msg" id="errorMsg">Image not found!<br>Check filename or run via local server.</div>
+        </div>
+        <div class="instructions">Scroll Down to Pour Potion</div>
+    </div>
+
+    <script>
+        const spriteSheet = document.getElementById('spriteSheet');
+        const errorMsg = document.getElementById('errorMsg');
+        
+        // Test if the image loads properly
+        const img = new Image();
+        img.src = 'Gemini_Generated_Image_87lwg887lwg887lw.jpg';
+        img.onerror = () => {
+            errorMsg.style.display = 'block';
+        };
+
+        const totalColumns = 4;
+        const totalFrames = 15; 
+        const frameWidth = 250;  
+        const frameHeight = 250; 
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const maxScrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            if (maxScrollHeight <= 0) return;
+            
+            const scrollFraction = scrollTop / maxScrollHeight;
+
+            let currentFrame = Math.floor(scrollFraction * totalFrames);
+            if (currentFrame < 0) currentFrame = 0;
+            if (currentFrame > totalFrames) currentFrame = totalFrames;
+
+            const column = currentFrame % totalColumns;
+            const row = Math.floor(currentFrame / totalColumns);
+
+            const positionX = -column * frameWidth;
+            const positionY = -row * frameHeight;
+
+            spriteSheet.style.backgroundPosition = `${positionX}px ${positionY}px`;
+        });
+    </script>
+</body>
+</html>
