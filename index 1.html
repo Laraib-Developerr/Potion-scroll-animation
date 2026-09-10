@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wren Calloway — Interactive Developer</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --void:#06090A;
+    --panel:#0D1512;
+    --panel-2:#0F1B16;
+    --emerald:#00E676;
+    --emerald-soft:#17C787;
+    --emerald-light:#8CFFCF;
+    --teal:#3FE8D3;
+    --ink:#EAF6EF;
+    --ink-dim:#82A297;
+    --ink-faint:#4C635A;
+    --line:rgba(140,255,207,0.14);
+    --line-strong:rgba(140,255,207,0.32);
+    --shadow-deep:#020B07;
+    --ease-out: cubic-bezier(.16,.84,.44,1);
+    --ease-soft: cubic-bezier(.22,.61,.36,1);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{background:var(--void);}
+
+  body{
+    background:var(--void);
+    color:var(--ink);
+    font-family:'Manrope', sans-serif;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{ background:var(--emerald); color:var(--void); }
+
+  h1,h2,h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    color:var(--ink);
+    letter-spacing:-0.01em;
+  }
+
+  p{
+    color:var(--ink-dim);
+    line-height:1.65;
+    font-size:clamp(0.95rem, 1.1vw, 1.05rem);
+  }
+
+  a{ color:inherit; }
+
+  /* ---------- ambient background ---------- */
+  .ambient{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(48% 38% at 50% 38%, rgba(0,230,118,0.10), transparent 70%),
+      radial-gradient(60% 50% at 85% 90%, rgba(63,232,211,0.06), transparent 70%),
+      var(--void);
+  }
+  .grain{
+    position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0.035; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- fixed chrome ---------- */
+  .brand{
+    position:fixed; top:0; left:0; right:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:1.6rem clamp(1.2rem, 4vw, 3rem);
+    pointer-events:none;
+    opacity:0;
+  }
+  .brand-mark{
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:1.05rem;
+    letter-spacing:0.04em; color:var(--ink);
+  }
+  .brand-role{
+    font-size:0.78rem; color:var(--ink-faint); letter-spacing:0.03em;
+  }
+
+  .progress-rail{
+    position:fixed; right:clamp(1rem,3vw,2.2rem); top:50%; transform:translateY(-50%);
+    width:2px; height:120px; background:var(--line); z-index:40; border-radius:2px;
+    opacity:0;
+  }
+  .progress-fill{
+    width:100%; height:0%; background:linear-gradient(var(--emerald), var(--teal));
+    border-radius:2px; box-shadow:0 0 12px rgba(0,230,118,0.6);
+  }
+
+  /* phone-only sleek bottom progress bar (see body.phone-nav toggle in JS) */
+  .mobile-progress-bar{
+    position:fixed; left:0; right:0; bottom:0; height:4px; z-index:50;
+    background:rgba(140,255,207,0.12);
+    display:none;
+  }
+  body.phone-nav .mobile-progress-bar{ display:block; }
+  .mobile-progress-fill{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--emerald), var(--teal));
+    box-shadow:0 0 10px rgba(0,230,118,0.6);
+  }
+
+  /* ---------- stage ---------- */
+  #stage{
+    position:relative;
+    height:680vh;
+    z-index:2;
+  }
+  .stage-inner{
+    position:relative;
+    height:100vh;
+    width:100%;
+    overflow:hidden;
+  }
+
+  /* mega background heading */
+  .mega{
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    font-size:clamp(4.5rem, 17vw, 15rem);
+    font-weight:700;
+    letter-spacing:-0.03em;
+    color:transparent;
+    -webkit-text-stroke:1px rgba(140,255,207,0.16);
+    white-space:nowrap;
+    z-index:2;
+    pointer-events:none;
+    user-select:none;
+  }
+
+  /* video */
+  .video-wrap{
+    position:absolute;
+    width:min(46vw, 520px);
+    aspect-ratio:1/1;
+    left:50%; top:50%;
+    z-index:5;
+    pointer-events:none;
+  }
+  .video-float{ width:100%; height:100%; }
+  .hero-video{
+    width:100%; height:100%; object-fit:contain;
+    filter:
+      drop-shadow(0 0 28px rgba(0,230,118,0.45))
+      drop-shadow(0 0 70px rgba(0,230,118,0.22));
+  }
+
+  /* badge */
+  .badge{
+    position:absolute; left:50%; top:16%;
+    transform:translate(-50%,-50%);
+    z-index:8;
+    padding:0.85rem 1.6rem;
+    background:rgba(13,21,18,0.55);
+    border:1px solid var(--line-strong);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-radius:100px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:500;
+    font-size:clamp(0.7rem, 1.4vw, 0.95rem);
+    letter-spacing:0.08em;
+    color:var(--emerald-light);
+    white-space:nowrap;
+    pointer-events:none;
+  }
+
+  .scroll-cue{
+    position:absolute; left:50%; bottom:6%; transform:translateX(-50%);
+    z-index:8; display:flex; flex-direction:column; align-items:center; gap:0.6rem;
+    color:var(--ink-faint); font-size:0.72rem; letter-spacing:0.12em;
+    pointer-events:none;
+  }
+  .scroll-cue .line{
+    width:1px; height:38px; background:linear-gradient(var(--ink-faint), transparent);
+    position:relative; overflow:hidden;
+  }
+  .scroll-cue .line::after{
+    content:''; position:absolute; top:-100%; left:0; width:100%; height:100%;
+    background:linear-gradient(var(--emerald), transparent);
+    animation:cueDrop 1.8s var(--ease-soft) infinite;
+  }
+  @keyframes cueDrop{ to{ top:100%; } }
+
+  /* text panels (vision / execution) */
+  .panel{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:min(34vw, 420px);
+    z-index:6;
+    opacity:0;
+    pointer-events:none;
+  }
+  .panel--left{ left:clamp(1.5rem, 7vw, 6.5rem); }
+  .panel--right{ right:clamp(1.5rem, 7vw, 6.5rem); text-align:right; }
+  .panel--right p{ margin-left:auto; }
+  .panel h2{
+    font-size:clamp(1.9rem, 3vw, 2.7rem);
+    margin-bottom:1.1rem;
+    line-height:1.08;
+  }
+  .panel-rule{
+    width:42px; height:2px; background:var(--emerald); margin-bottom:1.3rem;
+    box-shadow:0 0 10px rgba(0,230,118,0.6);
+  }
+  .panel--right .panel-rule{ margin-left:auto; }
+
+  /* projects group */
+  .group{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:flex-end; justify-content:center;
+    padding:0 clamp(1.5rem, 7vw, 6.5rem);
+    z-index:6;
+    opacity:0;
+    pointer-events:none;
+  }
+  .project-card, .skill-card{ pointer-events:none; }
+  .group.is-active .project-card, .group.is-active .skill-card{ pointer-events:auto; }
+  .group-title{
+    align-self:flex-end;
+    font-size:clamp(1.1rem, 1.6vw, 1.4rem);
+    color:var(--ink-dim);
+    font-weight:500;
+    margin-bottom:1.6rem;
+    padding-bottom:0.6rem;
+    border-bottom:1px solid var(--line);
+    width:min(38vw, 460px);
+    text-align:right;
+  }
+  .project-card{
+    width:min(38vw, 460px);
+    background:rgba(13,21,18,0.5);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:1.3rem 1.5rem;
+    margin-bottom:0.9rem;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    text-align:right;
+    opacity:0;
+    transform:translateX(36px);
+  }
+  .project-card h3{
+    font-size:1.05rem; margin-bottom:0.35rem; color:var(--ink);
+  }
+  .project-card p{ font-size:0.85rem; margin:0; }
+  .project-tag{
+    display:inline-block; font-size:0.68rem; color:var(--emerald-light);
+    letter-spacing:0.05em; margin-bottom:0.5rem;
+  }
+
+  /* skills group */
+  .skills-inner{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    width:100%; height:100%; padding:0 clamp(1.2rem,6vw,4rem);
+    text-align:center;
+  }
+  .skills-title{
+    font-size:clamp(1.8rem, 3vw, 2.6rem); margin-bottom:2.4rem;
+  }
+  .skill-cards{
+    display:flex; gap:1.4rem; justify-content:center; flex-wrap:wrap; max-width:1000px;
+  }
+  .skill-card{
+    width:260px;
+    padding:1.9rem 1.6rem;
+    background:rgba(13,21,18,0.5);
+    border:1px solid var(--line);
+    border-radius:16px;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    text-align:left;
+    opacity:0;
+    transform:translateY(46px);
+    transition:border-color 0.3s ease;
+  }
+  .skill-card h3{
+    font-size:1.1rem; margin-bottom:0.7rem; color:var(--emerald-light);
+  }
+  .skill-card p{ font-size:0.86rem; }
+
+  /* stack / ticker group */
+  .stack-inner{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    width:100%; height:100%; gap:3rem;
+  }
+  .stack-title{
+    font-size:clamp(1.8rem,3vw,2.6rem); text-align:center;
+  }
+  .ticker-viewport{
+    width:min(100%, 900px);
+    overflow:hidden;
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  }
+  .ticker-track{
+    display:flex; width:max-content;
+    animation:ticker 22s linear infinite;
+  }
+  .ticker-track:hover{ animation-play-state:paused; }
+  @keyframes ticker{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(-50%); }
+  }
+  .ticker-pill{
+    flex:0 0 auto;
+    padding:0.7rem 1.5rem;
+    margin-right:0.9rem;
+    border:1px solid var(--line);
+    border-radius:100px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:0.9rem;
+    color:var(--ink-dim);
+    background:rgba(13,21,18,0.4);
+    white-space:nowrap;
+  }
+  .stats-row{
+    display:flex; gap:clamp(1.6rem, 5vw, 4rem); justify-content:center; flex-wrap:wrap;
+  }
+  .stat{ text-align:center; }
+  .stat-num{
+    font-family:'Space Grotesk', sans-serif; font-weight:700;
+    font-size:clamp(2rem, 4vw, 3rem); color:var(--emerald-light);
+    display:block; line-height:1;
+  }
+  .stat-label{
+    font-size:0.78rem; color:var(--ink-faint); letter-spacing:0.04em;
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 900px){
+    #stage{ height:820vh; }
+    .video-wrap{ width:min(74vw, 380px); }
+    .panel{ width:min(72vw, 360px); }
+    .panel--left{ left:50%; transform:translate(-50%,-50%); text-align:center; top:auto; bottom:9%; }
+    .panel--right{ right:auto; left:50%; transform:translate(-50%,-50%); text-align:center; top:auto; bottom:9%; }
+    .panel--right p{ margin-left:auto; margin-right:auto; }
+    .panel--right .panel-rule{ margin-left:auto; margin-right:auto; }
+    .group{ align-items:center; padding:5.5rem 1.2rem 0; }
+    .group-title{ align-self:center; text-align:center; width:min(88vw,420px); }
+    .project-card{ width:min(88vw, 420px); text-align:center; transform:translateY(30px); }
+    .skill-cards{ gap:1rem; }
+    .skill-card{ width:min(80vw, 320px); }
+  }
+
+  @media (max-width: 520px){
+    .brand-role{ display:none; }
+    .progress-rail{ display:none; }
+    .stats-row{ gap:1.6rem; }
+  }
+
+  /* ---------- reduced motion fallback (static stacked layout) ---------- */
+  body.reduced #stage{ height:auto; }
+  body.reduced .stage-inner{ height:auto; display:block; overflow:visible; }
+  body.reduced .mega{ position:relative; top:auto; left:auto; transform:none; text-align:center; padding-top:3rem; }
+  body.reduced .video-wrap{ position:relative; left:auto; top:auto; transform:none; margin:2rem auto; }
+  body.reduced .badge{ position:relative; left:auto; top:auto; transform:none; display:table; margin:1.5rem auto; }
+  body.reduced .scroll-cue{ display:none; }
+  body.reduced .panel{ position:relative; opacity:1; visibility:visible; width:min(90vw,540px); margin:5rem auto; left:auto; right:auto; top:auto; transform:none; text-align:left; }
+  body.reduced .panel--right{ text-align:left; }
+  body.reduced .panel--right p{ margin-left:0; }
+  body.reduced .panel--right .panel-rule{ margin-left:0; }
+  body.reduced .group{ position:relative; opacity:1; visibility:visible; align-items:center; padding:4rem 1.5rem; }
+  body.reduced .group-title{ text-align:center; align-self:center; }
+  body.reduced .project-card{ opacity:1; transform:none; text-align:center; }
+  body.reduced .skills-inner{ padding:4rem 1.5rem; }
+  body.reduced .skill-card{ opacity:1; transform:none; }
+  body.reduced .stack-inner{ padding:4rem 1.5rem; }
+</style>
+</head>
+<body>
+
+  <div class="ambient"></div>
+  <div class="grain"></div>
+
+  <header class="brand" id="brand">
+    <span class="brand-mark">WC</span>
+    <span class="brand-role">Interactive Developer &amp; Motion Engineer</span>
+  </header>
+
+  <div class="progress-rail" id="progressRail">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="mobile-progress-bar" id="mobileProgressBar">
+    <div class="mobile-progress-fill" id="mobileProgressFill"></div>
+  </div>
+
+  <main id="stage">
+    <div class="stage-inner" id="stageInner">
+
+      <h1 class="mega" id="megaHeading">EXPERIENCE</h1>
+
+      <div class="video-wrap" id="videoWrap">
+        <div class="video-float" id="videoFloat">
+          <video class="hero-video" autoplay muted loop playsinline>
+            <source src="loop.webm" type="video/webm">
+          </video>
+        </div>
+      </div>
+
+      <div class="badge" id="badge">
+        <span>INTERACTIVE PORTFOLIO — 2026</span>
+      </div>
+
+      <div class="scroll-cue" id="scrollCue">
+        <span>SCROLL</span>
+        <div class="line"></div>
+      </div>
+
+      <div class="panel panel--left" id="panelVision">
+        <div class="panel-rule"></div>
+        <h2>Motion &amp; Meaning</h2>
+        <p>Interfaces should feel inevitable, like the next state was always going to happen. I build scroll-driven experiences that stay smooth under real content, tuned for frame budgets instead of dropped frames.</p>
+      </div>
+
+      <div class="panel panel--right" id="panelExecution">
+        <div class="panel-rule"></div>
+        <h2>Every Pixel, Accounted For</h2>
+        <p>Underneath the motion sits a plain, disciplined system: typed components, a documented spacing scale, and interaction states that behave the same way twice. Precision is what lets a page feel expensive without feeling fragile.</p>
+      </div>
+
+      <div class="group" id="projectsGroup">
+        <div class="group-title">Selected Work</div>
+        <div class="project-card">
+          <span class="project-tag">Healthcare</span>
+          <h3>Lumen Health</h3>
+          <p>Patient portal rebuilt around a five-minute onboarding flow. Task completion time dropped 41%.</p>
+        </div>
+        <div class="project-card">
+          <span class="project-tag">Agency</span>
+          <h3>Foundry Studio</h3>
+          <p>Cursor-reactive hero and a scroll-timed case study reel for a motion-first creative agency.</p>
+        </div>
+        <div class="project-card">
+          <span class="project-tag">Analytics</span>
+          <h3>Arclight Analytics</h3>
+          <p>Realtime dashboard that narrates its own data instead of just displaying it.</p>
+        </div>
+      </div>
+
+      <div class="group skills-inner-wrap" id="skillsGroup" style="align-items:center;">
+        <div class="skills-inner">
+          <h2 class="skills-title">Core Competencies</h2>
+          <div class="skill-cards">
+            <div class="skill-card">
+              <h3>GSAP ScrollTrigger</h3>
+              <p>Scroll-synced timelines and pinned sections that stay in step with the user's hand.</p>
+            </div>
+            <div class="skill-card">
+              <h3>UI/UX Architecture</h3>
+              <p>Design systems and component logic built to survive real content and real deadlines.</p>
+            </div>
+            <div class="skill-card">
+              <h3>Interactive Motion</h3>
+              <p>Hover states and feedback loops tuned in milliseconds, not vibes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group stack-wrap" id="stackGroup" style="align-items:center;">
+        <div class="stack-inner">
+          <h2 class="stack-title">Built With</h2>
+          <div class="ticker-viewport">
+            <div class="ticker-track" id="tickerTrack"></div>
+          </div>
+          <div class="stats-row">
+            <div class="stat"><span class="stat-num" data-count="5">0</span><span class="stat-label">years in motion design</span></div>
+            <div class="stat"><span class="stat-num" data-count="40">0</span><span class="stat-label">builds shipped</span></div>
+            <div class="stat"><span class="stat-num" data-count="60">0</span><span class="stat-label">fps motion budget</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+  <script>
+  (function(){
+
+    // ---------- build ticker content ----------
+    var tickerItems = ['HTML5','CSS3','JavaScript','GSAP','Anime.js'];
+    var track = document.getElementById('tickerTrack');
+    for(var r=0; r<2; r++){
+      tickerItems.forEach(function(item){
+        var pill = document.createElement('span');
+        pill.className = 'ticker-pill';
+        pill.textContent = item;
+        track.appendChild(pill);
+      });
+    }
+
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.body.classList.toggle('reduced', reduced);
+
+    // ---------- page-load entrance (single orchestrated moment) ----------
+    // NOTE: #videoWrap's transform (position/scale) is owned exclusively by GSAP
+    // throughout the page (see the scroll timeline below). Anime.js never touches
+    // #videoWrap's own transform, since two engines writing to the same transform
+    // string will stomp on each other. Anime.js only fades its opacity here, and
+    // separately animates the nested #videoFloat element for the idle bob.
+    function playIntro(){
+      if(window.anime){
+        anime.timeline({ easing:'easeOutExpo' })
+          .add({ targets:'#brand', opacity:[0,1], duration:700 }, 0)
+          .add({ targets:'#progressRail', opacity:[0,1], duration:700 }, 0)
+          .add({ targets:'#megaHeading', opacity:[0,1], duration:1100 }, 100)
+          .add({ targets:'#videoWrap', opacity:[0,1], duration:1000 }, 250)
+          .add({ targets:'#badge', opacity:[0,1], duration:800 }, 550)
+          .add({ targets:'#scrollCue', opacity:[0,1], duration:600 }, 800);
+      } else {
+        document.getElementById('brand').style.opacity = 1;
+        document.getElementById('progressRail').style.opacity = 1;
+      }
+      if(window.gsap){
+        gsap.from('#megaHeading', { scale:1.06, duration:1.1, delay:0.1, ease:'expo.out' });
+      }
+    }
+
+    // gentle idle float on the video, independent of scroll positioning
+    function playFloat(){
+      if(!window.anime || reduced) return;
+      anime({
+        targets:'#videoFloat',
+        translateY:[-10,10],
+        duration:3400,
+        direction:'alternate',
+        loop:true,
+        easing:'easeInOutSine'
+      });
+    }
+
+    // card hover glow, handled by anime.js
+    function wireCardGlow(selector){
+      document.querySelectorAll(selector).forEach(function(card){
+        card.addEventListener('mouseenter', function(){
+          anime({ targets:card, translateY:-6, duration:320, easing:'easeOutQuad' });
+          card.style.borderColor = 'rgba(140,255,207,0.55)';
+          card.style.boxShadow = '0 18px 40px rgba(0,230,118,0.16), 0 0 0 1px rgba(140,255,207,0.25) inset';
+        });
+        card.addEventListener('mouseleave', function(){
+          anime({ targets:card, translateY:0, duration:320, easing:'easeOutQuad' });
+          card.style.borderColor = '';
+          card.style.boxShadow = '';
+        });
+      });
+    }
+
+    // stat count-up, triggered once
+    function countUp(){
+      document.querySelectorAll('.stat-num').forEach(function(el){
+        var target = parseInt(el.getAttribute('data-count'), 10);
+        var obj = { val:0 };
+        anime({
+          targets:obj, val:target, round:1, duration:1400, easing:'easeOutExpo',
+          update:function(){ el.textContent = obj.val; }
+        });
+      });
+    }
+
+    playIntro();
+    playFloat();
+    wireCardGlow('.project-card, .skill-card');
+
+    // Some mobile browsers pause an autoplaying <video> once it scrolls mostly
+    // out of the viewport (to save battery) and never resume it automatically.
+    // Since the mobile path intentionally slides the video off-screen, make sure
+    // playback always resumes — both when it re-enters view and on every scroll
+    // tick as a safety net, so it reliably shows on the way back up too.
+    var heroVideoEl = document.querySelector('.hero-video');
+    function ensureVideoPlaying(){
+      if(heroVideoEl && heroVideoEl.paused){
+        heroVideoEl.play().catch(function(){});
+      }
+    }
+    if(heroVideoEl && 'IntersectionObserver' in window){
+      new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){ ensureVideoPlaying(); }
+        });
+      }, { threshold: 0.01 }).observe(heroVideoEl);
+    }
+
+    if(!window.gsap || !window.ScrollTrigger){ return; }
+    gsap.registerPlugin(ScrollTrigger);
+
+    if(reduced){
+      // simple, non-pinned reveals for reduced-motion users
+      gsap.utils.toArray('.panel, .group').forEach(function(el){
+        gsap.set(el, { opacity:1 });
+      });
+      gsap.utils.toArray('.project-card, .skill-card').forEach(function(el){
+        gsap.set(el, { opacity:1, transform:'none' });
+      });
+      countUp();
+      document.getElementById('progressFill').style.height = '100%';
+      return;
+    }
+
+    var mm = gsap.matchMedia();
+
+    mm.add(
+      { isDesktop: '(min-width: 901px)', isTablet: '(min-width: 601px) and (max-width: 900px)', isPhone: '(max-width: 600px)' },
+      function(context){
+
+      var isDesktop = context.conditions.isDesktop;
+      var isPhone = context.conditions.isPhone;
+      var isTablet = context.conditions.isTablet;
+
+      if(isPhone){ document.body.classList.add('phone-nav'); }
+
+      gsap.set('#videoWrap', { xPercent:-50, yPercent:-50, scale: isDesktop ? 1.18 : 1.15 });
+      // Establish an explicit GSAP-side opacity baseline of 1 for every element
+      // the scrub timeline will later fade. Without this, GSAP can cache a
+      // stale pre-animation value (from before Anime.js's entrance fade
+      // finishes) as the "resting" state for any time before that element's
+      // first tween — which then reappears incorrectly if the user scrolls
+      // back up past that point. Setting it explicitly up front guarantees
+      // the hero elements are reliably visible on reverse scroll too.
+      gsap.set(['#videoWrap', '#badge', '#scrollCue', '#megaHeading'], { opacity:1 });
+
+      var tl = gsap.timeline({
+        scrollTrigger:{
+          trigger:'#stage',
+          start:'top top',
+          end:'bottom bottom',
+          scrub:0.6,
+          pin:'.stage-inner',
+          onUpdate:function(self){
+            var p = self.progress*100;
+            document.getElementById('progressFill').style.height = p+'%';
+            var mobileFill = document.getElementById('mobileProgressFill');
+            if(mobileFill){ mobileFill.style.width = p+'%'; }
+
+            ensureVideoPlaying();
+
+            var projectsActive = p >= 43 && p < 58;
+            var skillsActive = p >= 59 && p < 78;
+            var stackActive = p >= 80;
+
+            document.getElementById('projectsGroup').classList.toggle('is-active', projectsActive);
+            document.getElementById('skillsGroup').classList.toggle('is-active', skillsActive);
+            document.getElementById('stackGroup').classList.toggle('is-active', stackActive);
+          }
+        }
+      });
+
+      // -------- hero exit (0 -> 10) --------
+      tl.to('#megaHeading', { opacity:0, duration:6 }, 4)
+        .to('#badge', { opacity:0, y:-16, duration:5 }, 4)
+        .to('#scrollCue', { opacity:0, duration:3 }, 1);
+
+      // -------- phase 1 : vision (10 -> 26) --------
+      // desktop: video glides right. tablet: video exits off-screen to the left.
+      // phone: video rises up to "Motion & Meaning", then shoots off-screen
+      // right and vanishes completely.
+      if(isDesktop){
+        tl.to('#videoWrap', { left:'76%', top:'46%', scale:0.78, duration:14 }, 10);
+      } else if(isPhone){
+        tl.to('#videoWrap', { left:'50%', top:'38%', scale:0.62, opacity:1, duration:8, ease:'sine.inOut' }, 10)
+          .to('#videoWrap', { left:'250%', top:'38%', opacity:0, duration:6, ease:'sine.inOut' }, 18);
+      } else {
+        tl.to('#videoWrap', { left:'-20%', top:'28%', scale:0.9, duration:14 }, 10);
+      }
+      tl.to('#panelVision', { opacity:1, duration:5 }, 13)
+        .to('#panelVision', { opacity:0, duration:4 }, 24);
+
+      // -------- phase 2 : execution (26 -> 42) --------
+      // desktop: video crosses to the left. tablet: video settles at the
+      // bottom-left, beside the "Every Pixel, Accounted For" paragraph.
+      // phone: video re-enters from the right up to "Every Pixel, Accounted
+      // For", then shoots off-screen right and vanishes again.
+      if(isDesktop){
+        tl.to('#videoWrap', { left:'24%', top:'46%', scale:0.78, duration:14 }, 27);
+      } else if(isPhone){
+        tl.to('#videoWrap', { left:'50%', top:'38%', scale:0.62, opacity:1, duration:7, ease:'sine.inOut' }, 27)
+          .to('#videoWrap', { left:'250%', top:'38%', opacity:0, duration:6, ease:'sine.inOut' }, 34);
+      } else {
+        tl.to('#videoWrap', { left:'16%', top:'84%', scale:0.4, duration:14 }, 27);
+      }
+      tl.to('#panelExecution', { opacity:1, duration:5 }, 30)
+        .to('#panelExecution', { opacity:0, duration:4 }, 41);
+
+      // -------- phase 3 : projects (42 -> 58) --------
+      // desktop: video stays left. tablet: video returns to center and shrinks small.
+      // phone: video glides down to a compact badge above "Selected Work".
+      if(isPhone){
+        tl.to('#videoWrap', { left:'50%', top:'9%', scale:0.42, opacity:1, duration:14, ease:'sine.inOut' }, 43);
+      } else if(!isDesktop){
+        tl.to('#videoWrap', { left:'50%', top:'9%', scale:0.42, duration:14 }, 43);
+      }
+      tl.to('#projectsGroup', { opacity:1, duration:3 }, 43);
+      tl.to('.project-card', {
+          opacity:1, x:0, duration:5, stagger:5
+        }, 44)
+        .to('#projectsGroup', { opacity:0, duration:3 }, 57);
+      tl.to('.project-card', { opacity:0, duration:2 }, 56.5);
+
+      // -------- phase 4 : skills (58 -> 78) --------
+      // desktop/tablet: video shrinks into a corner. phone: video drifts to a
+      // subtle glowing accent in the bottom-right, out of the cards' way.
+      if(isDesktop){
+        tl.to('#videoWrap', { left:'88%', top:'14%', scale:0.34, duration:12 }, 59);
+      } else if(isPhone){
+        tl.to('#videoWrap', { left:'80%', top:'86%', scale:0.34, duration:12, ease:'sine.inOut' }, 59);
+      } else {
+        tl.to('#videoWrap', { left:'82%', top:'10%', scale:0.3, duration:12 }, 59);
+      }
+      tl.to('#skillsGroup', { opacity:1, duration:3 }, 60);
+      tl.to('.skill-card', { opacity:1, y:0, duration:5, stagger:4 }, 62);
+      tl.to('#skillsGroup', { opacity:0, duration:3 }, 76);
+      tl.to('.skill-card', { opacity:0, duration:2 }, 75.5);
+
+      // -------- phase 5 : tech stack (78 -> 100) --------
+      // desktop/tablet: video fades to a faint, shrunk corner presence.
+      // phone: video returns full-circle to a confident, unshrunk center,
+      // a calm finale for "Built With".
+      if(isPhone){
+        tl.to('#videoWrap', { left:'50%', top:'14%', scale:1, duration:10, ease:'sine.inOut' }, 80);
+      } else {
+        tl.to('#videoWrap', { opacity:0.35, scale: isDesktop ? 0.22 : 0.2, duration:10 }, 80);
+      }
+      tl.to('#stackGroup', { opacity:1, duration:4 }, 82);
+
+      ScrollTrigger.create({
+        trigger:'#stage',
+        start:'80% top',
+        onEnter:countUp,
+        once:true
+      });
+
+      return function(){
+        document.body.classList.remove('phone-nav');
+      };
+
+    });
+
+  })();
+  </script>
+
+</body>
+</html>
